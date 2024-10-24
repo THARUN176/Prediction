@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Load prediction</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="{{ url_for('static', filename='download.png') }}" alt="TMEIC Logo">
+            <h1>Welcome to the Load Forecasting Application</h1>
+        </div>
+
+        <div class="option-selection">
+            <button id="existing-dataset-btn" onclick="showExistingDatasetForm()">Select Existing Dataset</button>
+            <button id="upload-dataset-btn" onclick="showUploadDatasetForm()">Upload Your Own Dataset</button>
+        </div>
+
+        <form id="existing-dataset-form" method="POST" enctype="multipart/form-data" style="display: none;">
+            <div class="form-section">
+                <label for="dataset">Select Dataset:</label>
+                <select id="dataset" name="dataset">
+                    <option value="">-- Select a predefined dataset --</option>
+                    {% for dataset in datasets %}
+                        <option value="{{ dataset }}">{{ dataset }}</option>
+                    {% endfor %}
+                </select>
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" required>
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" required>
+                <label for="fudge_factor">Fudge Factor (%):</label>
+                <select id="fudge_factor" name="fudge_factor">
+                    <option value="0">0</option>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="7">7</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+                <button type="submit">Predict</button>
+            </div>
+        </form>
+
+        <form id="upload-dataset-form" method="POST" enctype="multipart/form-data" style="display: none;">
+            <div class="form-section">
+                <label for="file">Upload Your Dataset:</label>
+                <input type="file" id="file" name="file" accept=".csv">
+                <label for="start_date">Start Date:</label>
+                <input type="date" id="start_date" name="start_date" required>
+                <label for="end_date">End Date:</label>
+                <input type="date" id="end_date" name="end_date" required>
+                <label for="fudge_factor">Fudge Factor (%):</label>
+                <select id="fudge_factor" name="fudge_factor">
+                    <option value="0">0</option>
+                    <option value="3">3</option>
+                    <option value="5">5</option>
+                    <option value="7">7</option>
+                    <option value="10">10</option>
+                    <option value="15">15</option>
+                </select>
+                <button type="submit">Predict</button>
+                <div class="guidelines">
+                    <h2>Guidelines for Uploading a New Dataset</h2>
+                    <p>Please ensure that your dataset adheres to the following schema before uploading:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Column Name</th>
+                                <th>Data Type</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Date</td>
+                                <td>datetime</td>
+                                <td>Date of the load measurement (e.g., 1/1/2016 12:00:00 AM)</td>
+                            </tr>
+                            <tr>
+                                <td>Load</td>
+                                <td>float</td>
+                                <td>Measured load in kilowatts (kW)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <p>
+                        <a href="{{ url_for('static', filename='sample.csv') }}" download>Download Sample Dataset</a>
+                    </p>
+                </div>
+            </div>
+        </form>
+
+        {% if predictions %}
+        <h2>For the {{ dataset_name }} dataset,</h2>
+        <h2>Predicted load values from {{ request.form['start_date'] }} to {{ request.form['end_date'] }} are as follows:</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date & Time</th>
+                        <th>Predicted Load (KW)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prediction in predictions %}
+                        <tr>
+                            <td>{{ prediction[0] }}</td>
+                            <td>{{ prediction[1] }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <h2>Accuracy Metrics:</h2>
+            <ul>
+                <li>R-Squared (R²): {{ accuracy_metrics['R-Squared (R²)'] }}</li>
+                <li>Average Error Percentage: {{ accuracy_metrics['Average Error Percentage'] }}</li>
+            </ul>
+            <h3>Understanding Accuracy Metrics:</h3>
+            <p></p>
+                <strong>R-Squared (R²):</strong> This measures how well our predictions fit the actual data. A value close to 1 indicates excellent predictions, while a value closer to 0 indicates poor predictions. Think of it like guessing your friends' heights based on their age – if your guesses are close to their actual heights, your R² score will be high.
+            </p>
+            <p>
+                <strong>Average Error Percentage:</strong> This calculates the average difference between our predictions and the actual values. It shows how much our guesses were off, on average. For example, if you guessed someone's height as 50 inches but they were actually 55 inches, you'd calculate the percentage error and then find the average of these percentages for all your guesses.
+            </p>
+            <div class="print-option">
+                <button onclick="window.print()">Print Results</button>
+            </div>
+        {% endif %}
+
+        {% if error_message %}
+            <p style="color: red">{{ error_message }}</p>
+        {% endif %}
+
+        <script>
+            function showExistingDatasetForm() {
+                document.getElementById("existing-dataset-form").style.display = "block";
+                document.getElementById("upload-dataset-form").style.display = "none";
+            }
+
+            function showUploadDatasetForm() {
+                document.getElementById("existing-dataset-form").style.display = "none";
+                document.getElementById("upload-dataset-form").style.display = "block";
+            }
+        </script>
+    </div>
+</body>
+</html>
